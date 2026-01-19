@@ -3,159 +3,198 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2D Skytespill - Enkel Versjon</title>
+<title>Skytespill i byen</title>
 <style>
        body {
            margin: 0;
            overflow: hidden;
-           background-color: #333;
+           background-color: #87CEEB; /* Lys blå for solskinnsdag */
        }
        canvas {
            display: block;
        }
+       #score {
+           position: absolute;
+           top: 10px;
+           left: 10px;
+           font-size: 24px;
+           color: black;
+       }
 </style>
 </head>
 <body>
+<div id="score">Poeng: 0</div>
 <canvas id="gameCanvas"></canvas>
 <script>
        const canvas = document.getElementById("gameCanvas");
        const ctx = canvas.getContext("2d");
-       // Sett opp størrelsen på canvasen
        canvas.width = window.innerWidth;
        canvas.height = window.innerHeight;
-       // Spillkarakter (spiller)
-       let player = {
+       let score = 0;
+       const player = {
            x: canvas.width / 2,
-           y: canvas.height - 100,
+           y: canvas.height - 50,
            width: 50,
            height: 50,
-           color: "red",
            speed: 5,
-           dx: 0,
-           dy: 0
+           color: 'green'
        };
-       // Prosjektiler (skudd)
-       let bullets = [];
-       // Fiender
-       let enemies = [];
-       let enemySpeed = 1;
-       // Poengsystem
-       let score = 0;
-       // Lag fiender
-       function createEnemies() {
-           for (let i = 0; i < 5; i++) {
-               enemies.push({
-                   x: Math.random() * canvas.width,
-                   y: Math.random() * canvas.height / 2,
-                   width: 50,
-                   height: 50,
-                   color: "blue",
-                   dx: enemySpeed,
-                   dy: enemySpeed
-               });
-           }
+       const bullets = [];
+       const bulletSpeed = 7;
+       const enemies = [];
+       const enemySpeed = 2;
+       const cars = [];
+       const carSpeed = 3;
+       // Create a random enemy with type (fast or slow)
+       function createEnemy() {
+           const type = Math.random() > 0.5 ? 'fast' : 'slow';
+           const speed = type === 'fast' ? enemySpeed + 1 : enemySpeed;
+           const enemy = {
+               x: Math.random() * canvas.width,
+               y: -50,
+               width: 50,
+               height: 50,
+               color: 'red',
+               speed: speed,
+               type: type
+           };
+           enemies.push(enemy);
        }
-       // Spilloppdatering
-       function update() {
-           movePlayer();
-           moveEnemies();
-           moveBullets();
-           detectCollisions();
-           draw();
-           requestAnimationFrame(update);
+       // Create a random car (obstacle)
+       function createCar() {
+           const car = {
+               x: Math.random() * canvas.width,
+               y: -100,
+               width: 100,
+               height: 50,
+               color: 'blue',
+               speed: carSpeed
+           };
+           cars.push(car);
        }
-       // Tegn alt på skjermen
-       function draw() {
-           ctx.clearRect(0, 0, canvas.width, canvas.height);
+       // Draw the player
+       function drawPlayer() {
            ctx.fillStyle = player.color;
            ctx.fillRect(player.x, player.y, player.width, player.height);
-           // Tegn prosjektilene
+       }
+       // Draw bullets
+       function drawBullets() {
+           ctx.fillStyle = 'yellow';
            bullets.forEach(bullet => {
-               ctx.fillStyle = "yellow";
                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
            });
-           // Tegn fiendene
+       }
+       // Draw enemies
+       function drawEnemies() {
            enemies.forEach(enemy => {
                ctx.fillStyle = enemy.color;
                ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
            });
-           // Tegn poeng
-           ctx.fillStyle = "white";
-           ctx.font = "24px Arial";
-           ctx.fillText("Poeng: " + score, 10, 30);
        }
-       // Beveg spilleren
-       function movePlayer() {
-           player.x += player.dx;
-           player.y += player.dy;
-           // Begrens spilleren innenfor canvasen
-           if (player.x < 0) player.x = 0;
-           if (player.y < 0) player.y = 0;
-           if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
-           if (player.y + player.height > canvas.height) player.y = canvas.height - player.height;
-       }
-       // Beveg fiendene
-       function moveEnemies() {
-           enemies.forEach(enemy => {
-               enemy.x += enemy.dx;
-               enemy.y += enemy.dy;
-               // Fiendene må reflekteres fra kanter
-               if (enemy.x < 0 || enemy.x + enemy.width > canvas.width) {
-                   enemy.dx = -enemy.dx;
-               }
-               if (enemy.y < 0 || enemy.y + enemy.height > canvas.height) {
-                   enemy.dy = -enemy.dy;
-               }
+       // Draw cars
+       function drawCars() {
+           cars.forEach(car => {
+               ctx.fillStyle = car.color;
+               ctx.fillRect(car.x, car.y, car.width, car.height);
            });
        }
-       // Beveg prosjektilene
+       // Move bullets
        function moveBullets() {
            bullets.forEach(bullet => {
-               bullet.y -= bullet.dy;
+               bullet.y -= bulletSpeed;
            });
-           // Fjern prosjektiler som er ute av skjermen
-           bullets = bullets.filter(bullet => bullet.y > 0);
+           // Remove bullets that go off-screen
+           bullets.filter(bullet => bullet.y > 0);
        }
-       // Kollisjonssjekk
+       // Move enemies
+       function moveEnemies() {
+           enemies.forEach(enemy => {
+               enemy.y += enemy.speed;
+           });
+           // Remove enemies that go off-screen
+           enemies.filter(enemy => enemy.y < canvas.height);
+       }
+       // Move cars
+       function moveCars() {
+           cars.forEach(car => {
+               car.y += car.speed;
+           });
+           // Remove cars that go off-screen
+           cars.filter(car => car.y < canvas.height);
+       }
+       // Detect collision between bullet and enemy
        function detectCollisions() {
-           bullets.forEach((bullet, bulletIndex) => {
-               enemies.forEach((enemy, enemyIndex) => {
-                   if (bullet.x < enemy.x + enemy.width &&
-                       bullet.x + bullet.width > enemy.x &&
-                       bullet.y < enemy.y + enemy.height &&
-                       bullet.y + bullet.height > enemy.y) {
-                       // Fjern fiende og prosjektil
-                       enemies.splice(enemyIndex, 1);
-                       bullets.splice(bulletIndex, 1);
-                       score += 10; // Øk poeng
+           for (let i = 0; i < bullets.length; i++) {
+               for (let j = 0; j < enemies.length; j++) {
+                   if (bullets[i].x < enemies[j].x + enemies[j].width &&
+                       bullets[i].x + bullets[i].width > enemies[j].x &&
+                       bullets[i].y < enemies[j].y + enemies[j].height &&
+                       bullets[i].y + bullets[i].height > enemies[j].y) {
+                       // Bullet hit the enemy
+                       bullets.splice(i, 1);
+                       enemies.splice(j, 1);
+                       score += 10; // Increase score
+                       document.getElementById('score').textContent = `Poeng: ${score}`;
+                       break;
                    }
-               });
-           });
+               }
+           }
+           for (let j = 0; j < cars.length; j++) {
+               if (player.x < cars[j].x + cars[j].width &&
+                   player.x + player.width > cars[j].x &&
+                   player.y < cars[j].y + cars[j].height &&
+                   player.y + player.height > cars[j].y) {
+                   // Player hit a car, game over or penalty
+                   alert('Game over! Du traff en bil!');
+                   resetGame();
+               }
+           }
        }
-       // Tastaturhendelser
+       // Reset the game
+       function resetGame() {
+           score = 0;
+           document.getElementById('score').textContent = `Poeng: ${score}`;
+           bullets.length = 0;
+           enemies.length = 0;
+           cars.length = 0;
+       }
+       // Update the game
+       function update() {
+           ctx.clearRect(0, 0, canvas.width, canvas.height);
+           drawPlayer();
+           drawBullets();
+           drawEnemies();
+           drawCars();
+           moveBullets();
+           moveEnemies();
+           moveCars();
+           detectCollisions();
+           requestAnimationFrame(update);
+       }
+       // Player movement
        document.addEventListener("keydown", (e) => {
-           if (e.key === "ArrowRight") player.dx = player.speed;
-           if (e.key === "ArrowLeft") player.dx = -player.speed;
-           if (e.key === "ArrowUp") player.dy = -player.speed;
-           if (e.key === "ArrowDown") player.dy = player.speed;
-           if (e.key === " ") shootBullet(); // Skyt når mellomromstasten trykkes
+           if (e.key === "ArrowLeft" && player.x > 0) {
+               player.x -= player.speed;
+           } else if (e.key === "ArrowRight" && player.x < canvas.width - player.width) {
+               player.x += player.speed;
+           }
        });
-       document.addEventListener("keyup", (e) => {
-           if (e.key === "ArrowRight" || e.key === "ArrowLeft") player.dx = 0;
-           if (e.key === "ArrowUp" || e.key === "ArrowDown") player.dy = 0;
+       // Shoot bullets
+       document.addEventListener("keydown", (e) => {
+           if (e.key === " ") {
+               const bullet = {
+                   x: player.x + player.width / 2 - 2.5,
+                   y: player.y,
+                   width: 5,
+                   height: 10
+               };
+               bullets.push(bullet);
+           }
        });
-       // Skyt prosjektil
-       function shootBullet() {
-           bullets.push({
-               x: player.x + player.width / 2 - 5,
-               y: player.y,
-               width: 10,
-               height: 20,
-               dy: 5
-           });
-       }
-       // Start spill
-       createEnemies();
+       // Spawn enemies and cars periodically
+       setInterval(createEnemy, 1000);
+       setInterval(createCar, 2000);
+       // Start the game
        update();
 </script>
 </body>
