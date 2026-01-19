@@ -3,16 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2D Spill - GTA-lignende</title>
+<title>2D Skytespill</title>
 <style>
        body {
            margin: 0;
            overflow: hidden;
-           background-color: #333;
+           background-color: #2c3e50;
        }
        canvas {
            display: block;
-           background-color: #2c3e50;
        }
 </style>
 </head>
@@ -27,7 +26,7 @@
        // Spillkarakter
        let player = {
            x: canvas.width / 2,
-           y: canvas.height / 2,
+           y: canvas.height - 100,
            width: 50,
            height: 50,
            color: "red",
@@ -35,17 +34,49 @@
            dx: 0,
            dy: 0
        };
-       // Oppdatering av spill
+       // Prosjektiler
+       let bullets = [];
+       // Fiender
+       let enemies = [];
+       // Lag fiender
+       function createEnemies() {
+           for (let i = 0; i < 5; i++) {
+               enemies.push({
+                   x: Math.random() * canvas.width,
+                   y: Math.random() * canvas.height / 2,
+                   width: 50,
+                   height: 50,
+                   color: "blue",
+                   speed: 1,
+                   dx: 0,
+                   dy: 1
+               });
+           }
+       }
+       // Spilloppdatering
        function update() {
            movePlayer();
-           drawPlayer();
-           requestAnimationFrame(update); // Animer spill-løkke
+           moveEnemies();
+           moveBullets();
+           detectCollisions();
+           draw();
+           requestAnimationFrame(update);
        }
-       // Tegn spillkarakteren på skjermen
-       function drawPlayer() {
-           ctx.clearRect(0, 0, canvas.width, canvas.height); // Tøm skjermen
+       // Tegn alt på skjermen
+       function draw() {
+           ctx.clearRect(0, 0, canvas.width, canvas.height);
            ctx.fillStyle = player.color;
            ctx.fillRect(player.x, player.y, player.width, player.height);
+           // Tegn prosjektilene
+           bullets.forEach(bullet => {
+               ctx.fillStyle = "yellow";
+               ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+           });
+           // Tegn fiendene
+           enemies.forEach(enemy => {
+               ctx.fillStyle = enemy.color;
+               ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+           });
        }
        // Beveg spilleren
        function movePlayer() {
@@ -57,18 +88,60 @@
            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
            if (player.y + player.height > canvas.height) player.y = canvas.height - player.height;
        }
+       // Beveg fiendene
+       function moveEnemies() {
+           enemies.forEach(enemy => {
+               enemy.y += enemy.dy;
+               if (enemy.y > canvas.height) enemy.y = 0;
+           });
+       }
+       // Beveg prosjektilene
+       function moveBullets() {
+           bullets.forEach(bullet => {
+               bullet.y -= bullet.dy;
+           });
+           // Fjern prosjektiler som er ute av skjermen
+           bullets = bullets.filter(bullet => bullet.y > 0);
+       }
+       // Kollisjonssjekk
+       function detectCollisions() {
+           bullets.forEach((bullet, bulletIndex) => {
+               enemies.forEach((enemy, enemyIndex) => {
+                   if (bullet.x < enemy.x + enemy.width &&
+                       bullet.x + bullet.width > enemy.x &&
+                       bullet.y < enemy.y + enemy.height &&
+                       bullet.y + bullet.height > enemy.y) {
+                       // Fjern fiende og prosjektil
+                       enemies.splice(enemyIndex, 1);
+                       bullets.splice(bulletIndex, 1);
+                   }
+               });
+           });
+       }
        // Tastaturhendelser
        document.addEventListener("keydown", (e) => {
            if (e.key === "ArrowRight") player.dx = player.speed;
            if (e.key === "ArrowLeft") player.dx = -player.speed;
-           if (e.key === "ArrowDown") player.dy = player.speed;
            if (e.key === "ArrowUp") player.dy = -player.speed;
+           if (e.key === "ArrowDown") player.dy = player.speed;
+           if (e.key === " ") shootBullet(); // Skyt når mellomromstasten trykkes
        });
        document.addEventListener("keyup", (e) => {
            if (e.key === "ArrowRight" || e.key === "ArrowLeft") player.dx = 0;
-           if (e.key === "ArrowDown" || e.key === "ArrowUp") player.dy = 0;
+           if (e.key === "ArrowUp" || e.key === "ArrowDown") player.dy = 0;
        });
-       // Start spill-løkke
+       // Skyt prosjektil
+       function shootBullet() {
+           bullets.push({
+               x: player.x + player.width / 2 - 5,
+               y: player.y,
+               width: 10,
+               height: 20,
+               dy: 5
+           });
+       }
+       // Start spill
+       createEnemies();
        update();
 </script>
 </body>
