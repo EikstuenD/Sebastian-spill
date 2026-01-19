@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2D Skytespill</title>
+<title>2D Skytespill - Enkel Versjon</title>
 <style>
        body {
            margin: 0;
            overflow: hidden;
-           background-color: #2c3e50;
+           background-color: #333;
        }
        canvas {
            display: block;
@@ -23,7 +23,7 @@
        // Sett opp størrelsen på canvasen
        canvas.width = window.innerWidth;
        canvas.height = window.innerHeight;
-       // Spillkarakter
+       // Spillkarakter (spiller)
        let player = {
            x: canvas.width / 2,
            y: canvas.height - 100,
@@ -34,10 +34,13 @@
            dx: 0,
            dy: 0
        };
-       // Prosjektiler
+       // Prosjektiler (skudd)
        let bullets = [];
        // Fiender
        let enemies = [];
+       let enemySpeed = 1;
+       // Poengsystem
+       let score = 0;
        // Lag fiender
        function createEnemies() {
            for (let i = 0; i < 5; i++) {
@@ -47,9 +50,8 @@
                    width: 50,
                    height: 50,
                    color: "blue",
-                   speed: 1,
-                   dx: 0,
-                   dy: 1
+                   dx: enemySpeed,
+                   dy: enemySpeed
                });
            }
        }
@@ -77,6 +79,10 @@
                ctx.fillStyle = enemy.color;
                ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
            });
+           // Tegn poeng
+           ctx.fillStyle = "white";
+           ctx.font = "24px Arial";
+           ctx.fillText("Poeng: " + score, 10, 30);
        }
        // Beveg spilleren
        function movePlayer() {
@@ -91,8 +97,15 @@
        // Beveg fiendene
        function moveEnemies() {
            enemies.forEach(enemy => {
+               enemy.x += enemy.dx;
                enemy.y += enemy.dy;
-               if (enemy.y > canvas.height) enemy.y = 0;
+               // Fiendene må reflekteres fra kanter
+               if (enemy.x < 0 || enemy.x + enemy.width > canvas.width) {
+                   enemy.dx = -enemy.dx;
+               }
+               if (enemy.y < 0 || enemy.y + enemy.height > canvas.height) {
+                   enemy.dy = -enemy.dy;
+               }
            });
        }
        // Beveg prosjektilene
@@ -114,6 +127,7 @@
                        // Fjern fiende og prosjektil
                        enemies.splice(enemyIndex, 1);
                        bullets.splice(bulletIndex, 1);
+                       score += 10; // Øk poeng
                    }
                });
            });
