@@ -8,7 +8,7 @@
        body {
            margin: 0;
            overflow: hidden;
-           background-color: #87CEEB; /* Lys blå for solskinnsdag */
+           background-color: #87CEEB; /* Solskinnsdag bakgrunn */
        }
        canvas {
            display: block;
@@ -28,31 +28,23 @@
 <script>
        const canvas = document.getElementById("gameCanvas");
        const ctx = canvas.getContext("2d");
+       // Justere canvas-størrelse til vinduets størrelse
        canvas.width = window.innerWidth;
        canvas.height = window.innerHeight;
        let score = 0;
-       // Laste inn bilder
-       const playerImage = new Image();
-       playerImage.src = "https://example.com/player.png"; // Sett inn riktig URL for spillerens bilde
-       const enemyImage = new Image();
-       enemyImage.src = "https://example.com/enemy.png"; // Sett inn riktig URL for fiende-bildet
-       const carImage = new Image();
-       carImage.src = "https://example.com/car.png"; // Sett inn riktig URL for bil-bildet
        // Spillerens egenskaper
        const player = {
-           x: canvas.width / 2,
+           x: canvas.width / 2 - 25,
            y: canvas.height - 100,
            width: 50,
            height: 50,
            speed: 5,
-           image: playerImage
+           color: 'green'
        };
        const bullets = [];
        const bulletSpeed = 7;
        const enemies = [];
        const enemySpeed = 2;
-       const cars = [];
-       const carSpeed = 3;
        // Lag fiende
        function createEnemy() {
            const enemy = {
@@ -61,25 +53,14 @@
                width: 50,
                height: 50,
                speed: enemySpeed,
-               image: enemyImage
+               color: 'red'
            };
            enemies.push(enemy);
        }
-       // Lag bil
-       function createCar() {
-           const car = {
-               x: Math.random() * canvas.width,
-               y: -100,
-               width: 100,
-               height: 50,
-               speed: carSpeed,
-               image: carImage
-           };
-           cars.push(car);
-       }
        // Tegne spilleren
        function drawPlayer() {
-           ctx.drawImage(player.image, player.x, player.y, player.width, player.height);
+           ctx.fillStyle = player.color;
+           ctx.fillRect(player.x, player.y, player.width, player.height);
        }
        // Tegne kulene
        function drawBullets() {
@@ -91,13 +72,8 @@
        // Tegne fiendene
        function drawEnemies() {
            enemies.forEach(enemy => {
-               ctx.drawImage(enemy.image, enemy.x, enemy.y, enemy.width, enemy.height);
-           });
-       }
-       // Tegne bilene
-       function drawCars() {
-           cars.forEach(car => {
-               ctx.drawImage(car.image, car.x, car.y, car.width, car.height);
+               ctx.fillStyle = enemy.color;
+               ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
            });
        }
        // Bevege kulene
@@ -105,24 +81,12 @@
            bullets.forEach(bullet => {
                bullet.y -= bulletSpeed;
            });
-           // Fjerne kuler som er utenfor skjermen
-           bullets.filter(bullet => bullet.y > 0);
        }
        // Bevege fiendene
        function moveEnemies() {
            enemies.forEach(enemy => {
                enemy.y += enemy.speed;
            });
-           // Fjerne fiender som er utenfor skjermen
-           enemies.filter(enemy => enemy.y < canvas.height);
-       }
-       // Bevege bilene
-       function moveCars() {
-           cars.forEach(car => {
-               car.y += car.speed;
-           });
-           // Fjerne biler som er utenfor skjermen
-           cars.filter(car => car.y < canvas.height);
        }
        // Kollisjonsdeteksjon
        function detectCollisions() {
@@ -141,25 +105,6 @@
                    }
                }
            }
-           // Kollisjon med bilene
-           for (let j = 0; j < cars.length; j++) {
-               if (player.x < cars[j].x + cars[j].width &&
-                   player.x + player.width > cars[j].x &&
-                   player.y < cars[j].y + cars[j].height &&
-                   player.y + player.height > cars[j].y) {
-                   // Spilleren treffer en bil
-                   alert('Game over! Du traff en bil!');
-                   resetGame();
-               }
-           }
-       }
-       // Tilbakestille spillet
-       function resetGame() {
-           score = 0;
-           document.getElementById('score').textContent = `Poeng: ${score}`;
-           bullets.length = 0;
-           enemies.length = 0;
-           cars.length = 0;
        }
        // Oppdater spillet
        function update() {
@@ -167,10 +112,8 @@
            drawPlayer();
            drawBullets();
            drawEnemies();
-           drawCars();
            moveBullets();
            moveEnemies();
-           moveCars();
            detectCollisions();
            requestAnimationFrame(update);
        }
@@ -194,9 +137,8 @@
                bullets.push(bullet);
            }
        });
-       // Lag fiender og biler regelmessig
+       // Lag fiender regelmessig
        setInterval(createEnemy, 1000);
-       setInterval(createCar, 2000);
        // Start spillet
        update();
 </script>
